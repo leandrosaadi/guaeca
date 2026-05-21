@@ -1,0 +1,61 @@
+==========================================================
+  GeoPortal — WebGIS Interativo
+==========================================================
+
+ESTRUTURA
+---------
+webgis/
+  index.html              — pagina principal
+  styles.css              — estilo (tema escuro profissional)
+  app.js                  — logica do mapa
+  iniciar_servidor.bat    — inicia o servidor local (clique 2 vezes)
+  generate_tiles.bat      — (re)gera os tiles da ortofoto (ja executado)
+  data/                   — camadas vetoriais em GeoJSON (EPSG:4326)
+  tiles/ortofoto/         — piramide XYZ da ortofoto (zoom 13-20)
+
+COMO USAR
+---------
+1. Clique duas vezes em "iniciar_servidor.bat"
+   - Uma janela de console abre e o navegador padrao abre em
+     http://localhost:8080 automaticamente.
+   - Para encerrar, feche a janela do console (CTRL+C).
+
+2. Como alternativa, voce pode abrir um terminal aqui e rodar:
+       python -m http.server 8080
+   ...e abrir http://localhost:8080 no navegador.
+
+(Observacao: por restricao de seguranca, abrir o "index.html"
+diretamente do disco -- com URL file:// -- nao funciona; tiles e
+geojson nao serao carregados. Sempre use o servidor local.)
+
+CARACTERISTICAS
+---------------
+- Ortofoto 2024 (1:19000) servida como piramide de tiles XYZ
+  -> carregamento sob demanda, semelhante ao Google Earth.
+- 3 mapas de fundo: OpenStreetMap, Satelite (Esri), CartoDB Positron.
+- Camadas vetoriais: Perimetro SPE, Parque Municipal, ZAR, ZC1, ZP,
+  Curvas de Nivel — todas com popup de atributos.
+- Painel lateral com 4 abas: Camadas, Legenda, Base, Ferramentas.
+- Ferramentas:
+   * Medir distancia / area
+   * Capturar coordenada (clique no mapa)
+   * Buscar endereco (Nominatim)
+   * Minha localizacao (GPS do navegador)
+   * Tela cheia
+   * Impressao
+- Mini mapa, escala, coordenada do mouse em tempo real.
+- Opacidade individual para cada camada.
+
+PARAMETROS TECNICOS
+-------------------
+- Sistema de coordenadas: WGS 84 (EPSG:4326), tiles em Web Mercator (EPSG:3857)
+- Tiles: PNG, 256x256, zoom 13-20 (zoom 19 = 0,27 m/px nativo)
+- Total: aprox. 26 mil tiles, 3,2 GB (acessados sob demanda)
+
+ATUALIZAR DADOS
+---------------
+- Para incluir novas camadas vetoriais, coloque um GeoJSON em
+  EPSG:4326 dentro de "data/" e adicione uma entrada no array
+  VECTOR_LAYERS no inicio do "app.js".
+- Para refazer os tiles (caso a ortofoto mude), execute
+  "generate_tiles.bat" novamente. A geracao usa GDAL do QGIS 3.40.11.

@@ -1,0 +1,19 @@
+# Logs
+*.log
+tile_log.txt
+tile_err.txt
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Vercel
+.vercel
+
+# Node (caso adicione futuramente)
+node_modules/
+package-lock.json
+yarn.lock
