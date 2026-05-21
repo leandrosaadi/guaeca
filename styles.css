@@ -970,145 +970,153 @@ input[type=range]::-moz-range-thumb {
 
 /* =========================================================
    RESPONSIVE
-   - .collapsed sempre significa HIDDEN
-   - Mobile/tablet: drawer overlay; toggle FAB sempre visivel
-   - Desktop: sidebar fixa lateral
+   - .collapsed = HIDDEN em todos os breakpoints
+   - Mobile (<768px): drawer overlay + toggle FAB
+   - Desktop (>=768px): sidebar fixa lateral
+   - Valores explicitos sem min()/clamp() para max compat Chrome/Safari mobile
    ========================================================= */
 
 /* ---------- MOBILE PORTRAIT + LANDSCAPE (<= 767px) ---------- */
 @media (max-width: 767px) {
     :root {
         --topbar-h: 56px;
-        --sidebar-w: 88vw;
+        --sidebar-w: 300px;
     }
 
     /* Topbar compacta */
-    .topbar { gap: var(--space-2); padding: 0 var(--space-3); }
-    .brand { min-width: 0; gap: var(--space-2); }
+    .topbar {
+        gap: 8px !important;
+        padding: 0 12px !important;
+        height: 56px;
+    }
+    .brand { min-width: auto !important; gap: 8px; }
     .brand-mark { width: 32px; height: 32px; font-size: 16px; }
-    .brand-text { display: none; }
-    /* Search escondido por padrao; aberto via botao lupa */
-    .search-wrap { display: none; }
+    .brand-text { display: none !important; }
+
+    /* Search escondido; abre via lupa */
+    .search-wrap { display: none !important; }
     .search-wrap.mobile-open {
-        display: flex;
+        display: flex !important;
         position: fixed;
-        top: calc(var(--topbar-h) + var(--space-2));
-        left: var(--space-3);
-        right: var(--space-3);
+        top: 64px;
+        left: 12px;
+        right: 12px;
         max-width: none;
         z-index: 1100;
         height: 44px;
         background: var(--surface-0);
-        box-shadow: var(--shadow-3);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
-    .topbar-actions { gap: var(--space-1); margin-left: auto; }
-    .icon-btn { width: 38px; height: 38px; }
 
-    /* Sidebar: drawer overlay sobre o mapa, max 88% da largura */
+    .topbar-actions { gap: 4px; margin-left: auto; }
+    .icon-btn { width: 40px; height: 40px; }
+
+    /* Sidebar drawer */
     .sidebar {
-        position: fixed;
-        top: var(--topbar-h);
-        bottom: var(--statusbar-h);
-        left: 0;
-        width: var(--sidebar-w);
-        max-width: 360px;
-        z-index: 1000;
-        box-shadow: var(--shadow-3);
+        position: fixed !important;
+        top: 56px !important;
+        bottom: 32px !important;
+        left: 0 !important;
+        width: 300px !important;
+        max-width: 88vw !important;
+        height: auto !important;
+        z-index: 1000 !important;
+        background: var(--surface-0);
+        border-right: 1px solid var(--border-base);
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
         transform: translateX(0);
-        transition: transform var(--dur-slow) var(--ease-out);
+        transition: transform 320ms ease;
     }
     .sidebar.collapsed {
-        transform: translateX(-100%);
+        transform: translateX(-100%) !important;
     }
 
-    /* Backdrop quando sidebar aberta */
-    .sidebar:not(.collapsed)::before {
-        content: '';
-        position: fixed;
-        top: var(--topbar-h);
-        left: var(--sidebar-w);
-        right: 0;
-        bottom: var(--statusbar-h);
-        background: rgba(0, 0, 0, 0.35);
-        z-index: -1;
-        pointer-events: none;
-    }
-
-    /* TOGGLE: FAB flutuante sempre visivel no canto superior esquerdo do mapa */
+    /* TOGGLE FAB: sempre visivel, alto z-index */
     .sidebar-toggle {
-        position: fixed;
-        top: calc(var(--topbar-h) + var(--space-3));
-        left: var(--space-3);
-        width: 44px;
-        height: 44px;
-        border-radius: var(--radius-md);
-        background: var(--surface-0);
-        border: 1px solid var(--border-base);
-        box-shadow: var(--shadow-2);
-        z-index: 1050;
+        position: fixed !important;
+        top: 68px !important;
+        left: 12px !important;
+        right: auto !important;
+        width: 44px !important;
+        height: 44px !important;
+        z-index: 1500 !important;
+        background: var(--surface-0) !important;
+        border: 1px solid var(--border-base) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
         display: flex !important;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-primary);
-        transition: left var(--dur-slow) var(--ease-out),
-                    background var(--dur-base),
-                    color var(--dur-base);
+        align-items: center !important;
+        justify-content: center !important;
+        color: var(--text-primary) !important;
+        transition: left 320ms ease, transform 220ms ease;
     }
-    /* Quando sidebar aberta, toggle vai para a borda direita do drawer */
+    /* Quando sidebar aberta, toggle vai pra borda direita do drawer */
     .sidebar:not(.collapsed) ~ .sidebar-toggle {
-        left: calc(min(var(--sidebar-w), 360px) - 22px);
+        left: 278px !important;
     }
-    .sidebar-toggle i { transition: transform var(--dur-base); }
+    /* Em telas muito estreitas, max-width 88vw aplica e toggle precisa seguir */
+    @media (max-width: 340px) {
+        .sidebar:not(.collapsed) ~ .sidebar-toggle {
+            left: calc(88vw - 22px) !important;
+        }
+    }
+    .sidebar-toggle i { transition: transform 220ms ease; }
 
-    /* Tabs */
+    /* Tabs compactas */
     .sidebar-tabs {
         grid-template-columns: repeat(4, 1fr);
-        padding: var(--space-2);
+        padding: 8px;
     }
-    .tab-btn { min-height: 48px; padding: var(--space-2) var(--space-1); font-size: 10px; }
+    .tab-btn { min-height: 48px; padding: 6px 4px; font-size: 10px; }
     .tab-btn i { font-size: 15px; }
-    .tab-content { padding: var(--space-3); }
+    .tab-content { padding: 12px; }
 
-    /* Mapa: ocupa toda largura sob a topbar */
+    /* Mapa em tela cheia sob a topbar */
     .map-wrap {
-        position: fixed;
-        top: var(--topbar-h);
-        left: 0;
-        right: 0;
-        bottom: var(--statusbar-h);
-        width: 100%;
+        position: fixed !important;
+        top: 56px !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 32px !important;
+        width: 100% !important;
         z-index: 100;
     }
 
-    /* Status bar com scroll horizontal */
+    /* Status bar compacta com scroll horizontal */
     .statusbar {
         font-size: 11px;
-        gap: var(--space-3);
-        padding: 0 var(--space-3);
+        gap: 12px;
+        padding: 0 12px;
         overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
     }
     .statusbar::-webkit-scrollbar { display: none; }
-    .status-item { white-space: nowrap; padding: 0; }
+    .status-item { white-space: nowrap; padding: 0; flex-shrink: 0; }
     .status-label { display: none; }
 
     /* Toasts */
     .toast-stack {
-        left: var(--space-3);
-        right: var(--space-3);
-        bottom: calc(var(--statusbar-h) + var(--space-3));
+        left: 12px;
+        right: 12px;
+        bottom: 44px;
     }
-    .toast { max-width: 100%; font-size: var(--fs-13); }
+    .toast { max-width: 100%; font-size: 13px; }
 
     /* Basemap em coluna */
     .basemap-grid { grid-template-columns: 1fr; }
-    .basemap-card { flex-direction: row; gap: var(--space-3); padding: var(--space-2); }
+    .basemap-card { flex-direction: row; gap: 12px; padding: 8px; }
     .basemap-thumb { width: 64px; height: 64px; flex-shrink: 0; }
 
     /* Modal */
-    .modal-content { max-width: 92vw; max-height: 88vh; padding: var(--space-5); }
-    .modal-content h2 { font-size: var(--fs-18); }
-    .modal-content p, .modal-content li { font-size: var(--fs-13); }
+    .modal-content {
+        max-width: 92vw;
+        max-height: 88vh;
+        padding: 20px;
+    }
+    .modal-content h2 { font-size: 18px; }
+    .modal-content p, .modal-content li { font-size: 13px; }
 }
 
 /* ---------- TABLET (768px - 1023px) ---------- */
