@@ -11,14 +11,18 @@ const VECTOR_LAYERS = [
         sub: 'Setor Especial',
         icon: 'fa-draw-polygon',
         file: 'data/perimetro_spe.geojson',
-        style: { color: '#ef4444', weight: 3, opacity: 1, fillColor: '#ef4444', fillOpacity: 0.05, dashArray: '8,4' },
+        style: { color: '#ef4444', weight: 3, opacity: 1, fill: false, dashArray: '8,4' },
         visible: true,
+        interactive: false,
         type: 'polygon'
     },
     {
         id: 'parque_municipal',
         name: 'Parque Municipal',
-        sub: 'Área verde protegida',
+        sub: 'PM — Área verde protegida',
+        popupTitle: 'Parque Municipal',
+        code: 'PM',
+        area: '455.653,01 m²',
         icon: 'fa-tree',
         file: 'data/parque_municipal.geojson',
         style: { color: '#15803d', weight: 2, opacity: 1, fillColor: '#22c55e', fillOpacity: 0.45 },
@@ -28,7 +32,10 @@ const VECTOR_LAYERS = [
     {
         id: 'zar',
         name: 'ZAR',
-        sub: 'Zona de Adensamento Restrito',
+        sub: 'Zona de Alta Restrição',
+        popupTitle: 'Zona de Alta Restrição',
+        code: 'ZAR',
+        area: '744.867,78 m²',
         icon: 'fa-square',
         file: 'data/zar.geojson',
         style: { color: '#ca8a04', weight: 2, opacity: 1, fillColor: '#eab308', fillOpacity: 0.32 },
@@ -38,7 +45,10 @@ const VECTOR_LAYERS = [
     {
         id: 'zc1',
         name: 'ZC1',
-        sub: 'Zona Central 1',
+        sub: 'Zona Comercial 1',
+        popupTitle: 'Zona Comercial 1',
+        code: 'ZC1',
+        area: '94.333,89 m²',
         icon: 'fa-square',
         file: 'data/zc1.geojson',
         style: { color: '#9333ea', weight: 2, opacity: 1, fillColor: '#a855f7', fillOpacity: 0.32 },
@@ -49,6 +59,9 @@ const VECTOR_LAYERS = [
         id: 'zp',
         name: 'ZP',
         sub: 'Zona de Proteção',
+        popupTitle: 'Zona de Proteção',
+        code: 'ZP',
+        area: '696.009,18 m²',
         icon: 'fa-square',
         file: 'data/zp.geojson',
         style: { color: '#0284c7', weight: 2, opacity: 1, fillColor: '#0ea5e9', fillOpacity: 0.28 },
@@ -173,23 +186,32 @@ ortoLayer.addTo(map);
 const vectorGroups = {};
 
 async function loadVectorLayers() {
-    await Promise.all(VECTOR_LAYERS.map(async (cfg) => {
+    const fetched = await Promise.all(VECTOR_LAYERS.map(async (cfg) => {
         try {
             const res = await fetch(cfg.file);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-
-            const layer = L.geoJSON(data, {
-                style: () => ({ ...cfg.style }),
-                onEachFeature: (feature, lyr) => bindFeaturePopup(feature, lyr, cfg)
-            });
-            vectorGroups[cfg.id] = { layer, cfg, count: data.features.length, data, opacityScale: 1 };
-            if (cfg.visible) layer.addTo(map);
+            return { cfg, data, error: null };
         } catch (e) {
             console.error(`Falha ao carregar ${cfg.file}:`, e);
-            vectorGroups[cfg.id] = { layer: null, cfg, count: 0, error: e.message };
+            return { cfg, data: null, error: e.message };
         }
     }));
+
+    fetched.forEach(({ cfg, data, error }) => {
+        if (error || !data) {
+            vectorGroups[cfg.id] = { layer: null, cfg, count: 0, error };
+            return;
+        }
+        const opts = {
+            style: () => ({ ...cfg.style }),
+            onEachFeature: (feature, lyr) => bindFeaturePopup(feature, lyr, cfg)
+        };
+        if (cfg.interactive === false) opts.interactive = false;
+        const layer = L.geoJSON(data, opts);
+        vectorGroups[cfg.id] = { layer, cfg, count: data.features.length, data, opacityScale: 1 };
+        if (cfg.visible) layer.addTo(map);
+    });
 
     renderLayerList();
     renderLegend();
@@ -199,28 +221,31 @@ async function loadVectorLayers() {
 function bindFeaturePopup(feature, layer, cfg) {
     const props = feature.properties || {};
     const fillColor = cfg.style.fillColor || cfg.style.color;
+    const title = cfg.popupTitle || cfg.name;
+    const subtitle = cfg.code || (cfg.popupTitle ? '' : cfg.sub);
+
     let html = `
         <div class="popup-header">
             <div class="popup-icon" style="background:${fillColor}">
                 <i class="fa-solid ${cfg.icon}"></i>
             </div>
             <div>
-                <div class="popup-title">${cfg.name}</div>
-                <div class="popup-subtitle">${cfg.sub || feature.geometry.type}</div>
+                <div class="popup-title">${title}</div>
+                ${subtitle ? `<div class="popup-subtitle">${subtitle}</div>` : ''}
             </div>
-        </div>
-        <div class="popup-body">`;
+        </div>`;
 
-    const entries = Object.entries(props).filter(([k, v]) => v !== null && v !== undefined && String(v).length);
-    if (entries.length === 0) {
-        html += `<div class="popup-row"><div class="popup-key">Tipo</div><div class="popup-val">${feature.geometry.type}</div></div>`;
+    let body = '';
+    if (cfg.area) {
+        body = `<div class="popup-row"><div class="popup-key">Área</div><div class="popup-val">${cfg.area}</div></div>`;
     } else {
+        const entries = Object.entries(props).filter(([k, v]) => v !== null && v !== undefined && String(v).length);
         entries.forEach(([k, v]) => {
-            html += `<div class="popup-row"><div class="popup-key">${k}</div><div class="popup-val">${v}</div></div>`;
+            body += `<div class="popup-row"><div class="popup-key">${k}</div><div class="popup-val">${v}</div></div>`;
         });
     }
-    html += `<div class="popup-row"><div class="popup-key">Geometria</div><div class="popup-val">${feature.geometry.type}</div></div>`;
-    html += `</div>`;
+    if (body) html += `<div class="popup-body">${body}</div>`;
+
     layer.bindPopup(html, { maxWidth: 320, className: 'styled-popup' });
 
     if (feature.geometry.type !== 'Point') {
