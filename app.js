@@ -452,6 +452,20 @@ document.getElementById('sidebar-toggle').addEventListener('click', () => {
     setTimeout(() => map.invalidateSize(), 340);
 });
 
+// ----- Mobile search toggle -----
+const mobileSearchBtn = document.getElementById('btn-search');
+if (mobileSearchBtn) {
+    mobileSearchBtn.addEventListener('click', () => {
+        const search = document.querySelector('.search-wrap');
+        if (search) {
+            search.style.display = search.style.display === 'flex' ? 'none' : 'flex';
+            if (search.style.display === 'flex') {
+                document.getElementById('search-input').focus();
+            }
+        }
+    });
+}
+
 // ----- Theme toggle -----
 const themeIcon = document.getElementById('theme-icon');
 function applyTheme(theme) {
