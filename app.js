@@ -447,9 +447,36 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ----- Sidebar toggle -----
+const sidebar = document.getElementById('sidebar');
 document.getElementById('sidebar-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('collapsed');
+    sidebar.classList.toggle('collapsed');
     setTimeout(() => map.invalidateSize(), 340);
+});
+
+// Em mobile, sidebar comeca fechada para nao cobrir o mapa
+function applyMobileSidebarState() {
+    if (window.innerWidth < 768) {
+        sidebar.classList.add('collapsed');
+    } else {
+        sidebar.classList.remove('collapsed');
+    }
+}
+applyMobileSidebarState();
+let _resizeT;
+window.addEventListener('resize', () => {
+    clearTimeout(_resizeT);
+    _resizeT = setTimeout(() => {
+        applyMobileSidebarState();
+        map.invalidateSize();
+    }, 200);
+});
+
+// Em mobile, clicar fora da sidebar fecha ela
+document.addEventListener('click', (e) => {
+    if (window.innerWidth >= 768) return;
+    if (sidebar.classList.contains('collapsed')) return;
+    if (e.target.closest('#sidebar') || e.target.closest('#sidebar-toggle')) return;
+    sidebar.classList.add('collapsed');
 });
 
 // ----- Mobile search toggle -----
@@ -457,11 +484,10 @@ const mobileSearchBtn = document.getElementById('btn-search');
 if (mobileSearchBtn) {
     mobileSearchBtn.addEventListener('click', () => {
         const search = document.querySelector('.search-wrap');
-        if (search) {
-            search.style.display = search.style.display === 'flex' ? 'none' : 'flex';
-            if (search.style.display === 'flex') {
-                document.getElementById('search-input').focus();
-            }
+        if (!search) return;
+        const isOpen = search.classList.toggle('mobile-open');
+        if (isOpen) {
+            document.getElementById('search-input').focus();
         }
     });
 }
