@@ -77,6 +77,127 @@ const VECTOR_LAYERS = [
         style: { color: '#d97706', weight: 1.2, opacity: 0.9 },
         visible: false,
         type: 'line'
+    },
+    {
+        id: 'z1',
+        name: 'Z1',
+        sub: 'Zona de Interesse 1',
+        popupTitle: 'Z1',
+        icon: 'fa-square',
+        file: 'data/z1.geojson',
+        style: { color: '#6366f1', weight: 2, opacity: 1, fillColor: '#818cf8', fillOpacity: 0.3 },
+        visible: false,
+        type: 'polygon'
+    },
+    {
+        id: 'z2',
+        name: 'Z2',
+        sub: 'Zona de Interesse 2',
+        popupTitle: 'Z2',
+        icon: 'fa-square',
+        file: 'data/z2.geojson',
+        style: { color: '#8b5cf6', weight: 2, opacity: 1, fillColor: '#a78bfa', fillOpacity: 0.3 },
+        visible: false,
+        type: 'polygon'
+    },
+    {
+        id: 'z4_od',
+        name: 'Z4-OD',
+        sub: 'Zona de Oferta Dependente',
+        popupTitle: 'Z4-OD',
+        icon: 'fa-square',
+        file: 'data/z4_od.geojson',
+        style: { color: '#ec4899', weight: 2, opacity: 1, fillColor: '#f472b6', fillOpacity: 0.3 },
+        visible: false,
+        type: 'polygon'
+    },
+    {
+        id: 'app_sitio_spe',
+        name: 'APP Sítio SPE',
+        sub: 'Área de Preservação Permanente',
+        popupTitle: 'APP Sítio SPE',
+        icon: 'fa-leaf',
+        file: 'data/app_sitio_spe.geojson',
+        style: { color: '#059669', weight: 2, opacity: 1, fillColor: '#10b981', fillOpacity: 0.25 },
+        visible: false,
+        type: 'polygon'
+    },
+    {
+        id: 'condephaat_cota_40',
+        name: 'Condephaat - Cota 40',
+        sub: 'Patrimônio Histórico',
+        popupTitle: 'Condephaat - Cota 40',
+        icon: 'fa-landmark',
+        file: 'data/condephaat_cota_40.geojson',
+        style: { color: '#b45309', weight: 2, opacity: 1, fillColor: '#d97706', fillOpacity: 0.25 },
+        visible: false,
+        type: 'polygon'
+    },
+    {
+        id: 'faixa_dominio_der',
+        name: 'Faixa de Domínio DER',
+        sub: 'Departamento de Estradas de Rodagem',
+        popupTitle: 'Faixa de Domínio DER',
+        icon: 'fa-road',
+        file: 'data/faixa_dominio_der.geojson',
+        style: { color: '#7c2d12', weight: 2, opacity: 1, fillColor: '#ea580c', fillOpacity: 0.2 },
+        visible: false,
+        type: 'polygon'
+    },
+    {
+        id: 'linha_pesm',
+        name: 'Linha PESM',
+        sub: 'Parque Estadual Serra do Mar',
+        popupTitle: 'Limite PESM',
+        icon: 'fa-tree',
+        file: 'data/linha_pesm.geojson',
+        style: { color: '#065f46', weight: 3, opacity: 1, fill: false, dashArray: '5,3' },
+        visible: false,
+        type: 'line'
+    },
+    {
+        id: 'drenagem_sitio',
+        name: 'Drenagem Sítio',
+        sub: 'Recursos Hídricos',
+        popupTitle: 'Drenagem',
+        icon: 'fa-water',
+        file: 'data/drenagem_sitio.geojson',
+        style: { color: '#0369a1', weight: 1.5, opacity: 0.9 },
+        visible: false,
+        type: 'line'
+    },
+    {
+        id: 'duto_spe',
+        name: 'Duto SPE',
+        sub: 'Infraestrutura de Dutos',
+        popupTitle: 'Duto SPE',
+        icon: 'fa-pipe',
+        file: 'data/duto_spe.geojson',
+        style: { color: '#881391', weight: 2, opacity: 0.95 },
+        visible: false,
+        type: 'line'
+    },
+    {
+        id: 'osvat_osplan_spe',
+        name: 'OSVAT e OSPLAN SPE',
+        sub: 'Ocupação de Solo',
+        popupTitle: 'OSVAT e OSPLAN',
+        icon: 'fa-building',
+        file: 'data/osvat_osplan_spe.geojson',
+        style: { color: '#7c3aed', weight: 1.5, opacity: 1, fillColor: '#a78bfa', fillOpacity: 0.2 },
+        visible: false,
+        type: 'polygon'
+    },
+    {
+        id: 'osvat_osplan_pol_spe',
+        name: 'OSVAT e OSPLAN POL SPE',
+        sub: 'Ocupação de Solo - Polígonos',
+        popupTitle: 'OSVAT e OSPLAN POL',
+        icon: 'fa-building',
+        file: 'data/osvat_osplan_pol_spe.geojson',
+        style: { color: '#c026d3', weight: 1.5, opacity: 1, fillColor: '#e879f9', fillOpacity: 0.2 },
+        visible: false,
+        type: 'polygon'
     }
 ];
 
