@@ -188,11 +188,12 @@ const VECTOR_LAYERS = [
     {
         id: 'osvat_osplan_spe',
         name: 'OSVAT e OSPLAN SPE',
-        sub: 'Ocupação de Solo',
+        sub: 'Faixa de Dutos',
         popupTitle: 'OSVAT e OSPLAN',
-        icon: 'fa-building',
+        icon: 'fa-pipe',
         file: 'data/osvat_osplan_spe.geojson',
-        style: { color: '#7c3aed', weight: 1.5, opacity: 1, fillColor: '#a78bfa', fillOpacity: 0.2 },
+        // Mesma paleta da camada OSBAT SPE (bege/tan)
+        style: { color: '#A89968', weight: 1.5, opacity: 1, fillColor: '#E8D9A9', fillOpacity: 0.65 },
         visible: true,
         type: 'polygon'
     }
@@ -500,8 +501,15 @@ function bindFeaturePopup(feature, layer, cfg) {
             body += `<div class="popup-row"><div class="popup-key">Área <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:10px">(${AREA_METHOD})</span></div><div class="popup-val">${formatArea(areaM2)}</div></div>`;
         }
     }
-    // Atributos do GeoJSON
-    const entries = Object.entries(props).filter(([k, v]) => v !== null && v !== undefined && String(v).trim().length);
+    // Atributos do GeoJSON — oculta campos de área/superfície e auxiliares internos
+    // (a área já é exibida calculada em SIRGAS 2000 acima)
+    const AREA_PROP_RX = /^(m[²2]|area|área|shape_area|st_area|st_areashape|sq_?m|hectares?|ha)$/i;
+    const SKIP_PROPS = new Set(['_part', '_of']);
+    const entries = Object.entries(props).filter(([k, v]) =>
+        v !== null && v !== undefined && String(v).trim().length
+        && !AREA_PROP_RX.test(k.trim())
+        && !SKIP_PROPS.has(k)
+    );
     entries.forEach(([k, v]) => {
         body += `<div class="popup-row"><div class="popup-key">${k}</div><div class="popup-val">${v}</div></div>`;
     });
