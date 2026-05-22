@@ -330,12 +330,35 @@ function injectSVGPatterns() {
     `);
 }
 
+// Explode MultiPolygons em Polygons individuais para que cada parte
+// seja clicável separadamente e exiba a própria área no popup
+function explodeMultiPolygons(geojson) {
+    if (!geojson || !Array.isArray(geojson.features)) return geojson;
+    const expanded = [];
+    geojson.features.forEach(f => {
+        if (f.geometry && f.geometry.type === 'MultiPolygon') {
+            const parts = f.geometry.coordinates;
+            parts.forEach((polyCoords, i) => {
+                expanded.push({
+                    type: 'Feature',
+                    properties: { ...(f.properties || {}), _part: i + 1, _of: parts.length },
+                    geometry: { type: 'Polygon', coordinates: polyCoords }
+                });
+            });
+        } else {
+            expanded.push(f);
+        }
+    });
+    return { ...geojson, features: expanded };
+}
+
 async function loadVectorLayers() {
     const fetched = await Promise.all(VECTOR_LAYERS.map(async (cfg) => {
         try {
             const res = await fetch(cfg.file);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+            const raw = await res.json();
+            const data = explodeMultiPolygons(raw);
             return { cfg, data, error: null };
         } catch (e) {
             console.error(`Falha ao carregar ${cfg.file}:`, e);
