@@ -8,10 +8,11 @@ const VECTOR_LAYERS = [
     {
         id: 'perimetro_spe',
         name: 'Perímetro SPE',
-        sub: 'Setor Especial',
+        sub: 'Perímetro Sítio Guaecá — SPE',
         icon: 'fa-draw-polygon',
         file: 'data/perimetro_spe.geojson',
-        style: { color: '#ef4444', weight: 3, opacity: 1, fill: false, dashArray: '8,4' },
+        // Contorno vermelho sólido, sem preenchimento
+        style: { color: '#E00000', weight: 2.5, opacity: 1, fill: false },
         visible: true,
         interactive: false,
         type: 'polygon'
@@ -23,7 +24,8 @@ const VECTOR_LAYERS = [
         popupTitle: 'Parque Municipal',
         icon: 'fa-tree',
         file: 'data/parque_municipal.geojson',
-        style: { color: '#15803d', weight: 2, opacity: 1, fillColor: '#22c55e', fillOpacity: 0.45 },
+        // Verde médio
+        style: { color: '#2E8B30', weight: 1.5, opacity: 1, fillColor: '#5BC15A', fillOpacity: 0.65 },
         visible: false,
         type: 'polygon'
     },
@@ -34,7 +36,8 @@ const VECTOR_LAYERS = [
         popupTitle: 'Zona de Alta Restrição',
         icon: 'fa-square',
         file: 'data/zar.geojson',
-        style: { color: '#ca8a04', weight: 2, opacity: 1, fillColor: '#eab308', fillOpacity: 0.32 },
+        // Rosa/magenta
+        style: { color: '#B83585', weight: 1.5, opacity: 1, fillColor: '#F590D5', fillOpacity: 0.65 },
         visible: false,
         type: 'polygon'
     },
@@ -45,7 +48,8 @@ const VECTOR_LAYERS = [
         popupTitle: 'Zona Comercial 1',
         icon: 'fa-square',
         file: 'data/zc1.geojson',
-        style: { color: '#9333ea', weight: 2, opacity: 1, fillColor: '#a855f7', fillOpacity: 0.32 },
+        // Amarelo claro
+        style: { color: '#C9A53A', weight: 1.5, opacity: 1, fillColor: '#FCF4A8', fillOpacity: 0.75 },
         visible: false,
         type: 'polygon'
     },
@@ -56,7 +60,8 @@ const VECTOR_LAYERS = [
         popupTitle: 'Zona de Proteção',
         icon: 'fa-square',
         file: 'data/zp.geojson',
-        style: { color: '#0284c7', weight: 2, opacity: 1, fillColor: '#0ea5e9', fillOpacity: 0.28 },
+        // Verde pálido
+        style: { color: '#4FA94A', weight: 1.5, opacity: 1, fillColor: '#A8E89D', fillOpacity: 0.65 },
         visible: false,
         type: 'polygon'
     },
@@ -66,51 +71,57 @@ const VECTOR_LAYERS = [
         sub: 'Topografia',
         icon: 'fa-wave-square',
         file: 'data/curva_nivel.geojson',
-        style: { color: '#d97706', weight: 1.2, opacity: 0.9 },
+        // Cinza claro
+        style: { color: '#A8A8A8', weight: 0.9, opacity: 0.95 },
         visible: false,
         type: 'line'
     },
     {
         id: 'z1',
-        name: 'Z1',
-        sub: 'Zona de Interesse 1',
-        popupTitle: 'Z1',
+        name: 'Z.1',
+        sub: 'Zona 1',
+        popupTitle: 'Z.1',
         icon: 'fa-square',
         file: 'data/z1.geojson',
-        style: { color: '#6366f1', weight: 2, opacity: 1, fillColor: '#818cf8', fillOpacity: 0.3 },
+        // Verde claro
+        style: { color: '#4FA94A', weight: 1.5, opacity: 1, fillColor: '#A0E89B', fillOpacity: 0.65 },
         visible: false,
         type: 'polygon'
     },
     {
         id: 'z2',
-        name: 'Z2',
-        sub: 'Zona de Interesse 2',
-        popupTitle: 'Z2',
+        name: 'Z.2',
+        sub: 'Zona 2',
+        popupTitle: 'Z.2',
         icon: 'fa-square',
         file: 'data/z2.geojson',
-        style: { color: '#8b5cf6', weight: 2, opacity: 1, fillColor: '#a78bfa', fillOpacity: 0.3 },
+        // Amarelo claro
+        style: { color: '#C9A53A', weight: 1.5, opacity: 1, fillColor: '#FCF49B', fillOpacity: 0.75 },
         visible: false,
         type: 'polygon'
     },
     {
         id: 'z4_od',
-        name: 'Z4-OD',
-        sub: 'Zona de Oferta Dependente',
-        popupTitle: 'Z4-OD',
+        name: 'Z.4-OD',
+        sub: 'Zona 4 — OD',
+        popupTitle: 'Z.4-OD',
         icon: 'fa-square',
         file: 'data/z4_od.geojson',
-        style: { color: '#ec4899', weight: 2, opacity: 1, fillColor: '#f472b6', fillOpacity: 0.3 },
+        // Rosa claro
+        style: { color: '#B86BA0', weight: 1.5, opacity: 1, fillColor: '#E9B5E2', fillOpacity: 0.65 },
         visible: false,
         type: 'polygon'
     },
     {
         id: 'app_sitio_spe',
-        name: 'APP Sítio SPE',
+        name: 'APP Curso d\'água',
         sub: 'Área de Preservação Permanente',
-        popupTitle: 'APP Sítio SPE',
+        popupTitle: 'APP Curso d\'água',
         icon: 'fa-leaf',
         file: 'data/app_sitio_spe.geojson',
-        style: { color: '#059669', weight: 2, opacity: 1, fillColor: '#10b981', fillOpacity: 0.25 },
+        // Hachura azul (pattern SVG)
+        style: { color: '#1E5FB8', weight: 1.2, opacity: 1, fillColor: 'url(#hatch-blue)', fillOpacity: 1 },
+        legendFill: 'repeating-linear-gradient(45deg, transparent 0 3px, #1E5FB8 3px 4.5px)',
         visible: false,
         type: 'polygon'
     },
@@ -121,53 +132,58 @@ const VECTOR_LAYERS = [
         popupTitle: 'Condephaat - Cota 40',
         icon: 'fa-landmark',
         file: 'data/condephaat_cota_40.geojson',
-        style: { color: '#b45309', weight: 2, opacity: 1, fillColor: '#d97706', fillOpacity: 0.25 },
+        // Azul escuro sólido (apenas contorno)
+        style: { color: '#1B4DA0', weight: 2, opacity: 1, fill: false },
         visible: false,
         type: 'polygon'
     },
     {
         id: 'faixa_dominio_der',
         name: 'Faixa de Domínio DER',
-        sub: 'Departamento de Estradas de Rodagem',
+        sub: 'Faixa de domínio rodovia',
         popupTitle: 'Faixa de Domínio DER',
         icon: 'fa-road',
         file: 'data/faixa_dominio_der.geojson',
-        style: { color: '#7c2d12', weight: 2, opacity: 1, fillColor: '#ea580c', fillOpacity: 0.2 },
+        // Cinza tracejado, sem preenchimento
+        style: { color: '#555555', weight: 1.3, opacity: 1, fill: false, dashArray: '6,4' },
         visible: true,
         type: 'polygon'
     },
     {
         id: 'linha_pesm',
-        name: 'Linha PESM',
+        name: 'Limite PESM',
         sub: 'Parque Estadual Serra do Mar',
         popupTitle: 'Limite PESM',
         icon: 'fa-tree',
         file: 'data/linha_pesm.geojson',
-        style: { color: '#065f46', weight: 3, opacity: 1, fill: false, dashArray: '5,3' },
+        // Verde tracejado
+        style: { color: '#2F8F2A', weight: 2, opacity: 1, fill: false, dashArray: '6,4' },
         visible: false,
         type: 'line'
     },
     {
         id: 'drenagem_sitio',
-        name: 'Drenagem Sítio',
+        name: 'Curso d\'água',
         sub: 'Recursos Hídricos',
-        popupTitle: 'Drenagem',
+        popupTitle: 'Curso d\'água',
         icon: 'fa-water',
         file: 'data/drenagem_sitio.geojson',
-        style: { color: '#0369a1', weight: 1.5, opacity: 0.9 },
+        // Azul ciano claro
+        style: { color: '#4FBED8', weight: 1.5, opacity: 1 },
         visible: true,
         type: 'line'
     },
     {
         id: 'duto_spe',
         name: 'OSBAT SPE',
-        sub: 'Infraestrutura de Dutos',
+        sub: 'Faixa de Dutos',
         popupTitle: 'OSBAT SPE',
         icon: 'fa-pipe',
         file: 'data/duto_spe.geojson',
-        style: { color: '#881391', weight: 2, opacity: 0.95 },
+        // Bege/tan
+        style: { color: '#A89968', weight: 1.5, opacity: 1, fillColor: '#E8D9A9', fillOpacity: 0.65 },
         visible: true,
-        type: 'line'
+        type: 'polygon'
     },
     {
         id: 'osvat_osplan_spe',
@@ -248,7 +264,8 @@ const map = L.map('map', {
     maxZoom: 21,
     zoomControl: false,
     fullscreenControl: false,
-    preferCanvas: true,
+    renderer: L.svg(),         // SVG (suporta patterns/hachuras)
+    preferCanvas: false,
     worldCopyJump: true,
     zoomAnimation: true,
     fadeAnimation: true,
@@ -287,6 +304,32 @@ ortoLayer.addTo(map);
 // ----- Camadas vetoriais -----
 const vectorGroups = {};
 
+// Injeta <defs><pattern> no SVG do Leaflet (para hachuras tipo APP)
+function injectSVGPatterns() {
+    // Força criação do SVG renderer adicionando um path invisível temporariamente
+    if (!map.getRenderer || !map.options) return;
+    let svgRoot = document.querySelector('#map svg.leaflet-zoom-animated');
+    if (!svgRoot) {
+        // Cria o renderer se ainda não existir
+        const tmp = L.polyline([[0,0],[0,0]], { renderer: L.svg() }).addTo(map);
+        svgRoot = document.querySelector('#map svg.leaflet-zoom-animated');
+        map.removeLayer(tmp);
+    }
+    if (!svgRoot || svgRoot.querySelector('#hatch-blue')) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    let defs = svgRoot.querySelector('defs');
+    if (!defs) {
+        defs = document.createElementNS(ns, 'defs');
+        svgRoot.insertBefore(defs, svgRoot.firstChild);
+    }
+    defs.insertAdjacentHTML('beforeend', `
+        <pattern id="hatch-blue" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+            <rect width="7" height="7" fill="rgba(232,240,255,0.25)"/>
+            <line x1="0" y1="0" x2="0" y2="7" stroke="#1E5FB8" stroke-width="1.6"/>
+        </pattern>
+    `);
+}
+
 async function loadVectorLayers() {
     const fetched = await Promise.all(VECTOR_LAYERS.map(async (cfg) => {
         try {
@@ -299,6 +342,9 @@ async function loadVectorLayers() {
             return { cfg, data: null, error: e.message };
         }
     }));
+
+    // Injeta defs/patterns SVG para fills com hachura (ex: APP)
+    injectSVGPatterns();
 
     fetched.forEach(({ cfg, data, error }) => {
         if (error || !data) {
@@ -457,13 +503,18 @@ function renderLayerList() {
     list.innerHTML = '';
     VECTOR_LAYERS.forEach(cfg => {
         const g = vectorGroups[cfg.id];
-        const fillColor = cfg.style.fillColor || cfg.style.color;
+        // Para camadas com hachura SVG, usa legendFill (gradient CSS) como background do swatch
+        const swatchBg = cfg.legendFill
+            || (cfg.style.fill === false ? 'transparent' : (cfg.style.fillColor || cfg.style.color));
+        const swatchBorder = (cfg.style.fill === false || cfg.style.dashArray)
+            ? `;outline:2px ${cfg.style.dashArray ? 'dashed' : 'solid'} ${cfg.style.color};outline-offset:-3px`
+            : '';
         const isActive = cfg.visible && !g.error;
         const item = document.createElement('div');
         item.className = `layer-item ${isActive ? 'is-active' : ''}`;
         item.dataset.layer = cfg.id;
         item.innerHTML = `
-            <div class="layer-swatch" style="background:${fillColor}${cfg.style.dashArray ? ';outline:2px dashed '+cfg.style.color+';outline-offset:-3px' : ''}">
+            <div class="layer-swatch" style="background:${swatchBg}${swatchBorder}">
                 <i class="fa-solid ${cfg.icon}"></i>
             </div>
             <div class="layer-info">
@@ -549,8 +600,10 @@ function renderLegend() {
         <div class="legend-group-title"><i class="fa-solid fa-shapes"></i>Zoneamento e Áreas</div>`;
     VECTOR_LAYERS.filter(c => c.type === 'polygon').forEach(cfg => {
         const dash = cfg.style.dashArray ? `;border:2px dashed ${cfg.style.color}` : `;border:1px solid ${cfg.style.color}`;
+        const bg = cfg.legendFill
+            || (cfg.style.fill === false ? 'transparent' : (cfg.style.fillColor || cfg.style.color));
         html += `<div class="legend-row">
-            <div class="legend-swatch" style="background:${cfg.style.fillColor}${dash}"></div>
+            <div class="legend-swatch" style="background:${bg}${dash}"></div>
             <div><b style="color:var(--text-primary)">${cfg.name}</b> — ${cfg.sub}</div>
         </div>`;
     });
