@@ -855,6 +855,89 @@ input[type=range]::-moz-range-thumb {
 .measure-cursor-tip::before,
 .measure-cursor-tip::after { display: none; }
 
+/* Barra flutuante de controle da ferramenta de medida (Finalizar/Cancelar) */
+.measure-controls {
+    position: fixed;
+    bottom: calc(var(--statusbar-h) + 16px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1200;
+    background: var(--surface-0);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-3);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 260px;
+    animation: measureControlsIn 220ms var(--ease-spring);
+}
+@keyframes measureControlsIn {
+    from { opacity: 0; transform: translate(-50%, 12px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.measure-controls-hint {
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--fs-12);
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.measure-controls-hint i { color: var(--accent); }
+.measure-controls-btns {
+    display: flex; gap: 8px;
+}
+.measure-btn {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    font-size: var(--fs-13);
+    font-weight: 600;
+    color: white;
+    min-height: 44px;
+    transition: background var(--dur-fast), transform var(--dur-fast);
+}
+.measure-btn:active { transform: scale(0.96); }
+.measure-btn-finish { background: var(--accent); }
+.measure-btn-finish:hover { background: var(--accent-hover); }
+.measure-btn-cancel {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border-base);
+}
+.measure-btn-cancel:hover { background: var(--surface-3); }
+
+/* Mobile: barra ocupa quase toda a largura, mais perto da borda inferior */
+@media (max-width: 767px) {
+    .measure-controls {
+        left: 12px;
+        right: 12px;
+        transform: none;
+        bottom: calc(var(--statusbar-h) + 12px);
+        min-width: auto;
+    }
+    @keyframes measureControlsIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+}
+
+/* Popup arrastável — cursor grab no wrapper */
+.leaflet-popup-content-wrapper {
+    cursor: grab;
+}
+.leaflet-popup-content-wrapper:active {
+    cursor: grabbing;
+}
+/* Mas elementos interativos dentro do popup mantêm seus próprios cursores */
+.leaflet-popup-content-wrapper a,
+.leaflet-popup-content-wrapper button,
+.leaflet-popup-content-wrapper input,
+.leaflet-popup-content-wrapper .leaflet-popup-close-button {
+    cursor: pointer;
+}
+
 /* =========================================================
    MODAL
    ========================================================= */

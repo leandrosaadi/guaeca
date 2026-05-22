@@ -946,6 +946,93 @@ map.on('locationerror', e => {
     toast({ title: 'Erro de localização', sub: e.message, type: 'error', icon: 'fa-triangle-exclamation' });
 });
 
+// ----- Popups arrastáveis -----
+// Qualquer popup aberto no mapa (camadas, medida, coordenada, busca)
+// pode ser clicado, segurado e arrastado para outra posição da tela.
+// O deslocamento é aplicado via transform CSS no wrapper e na tip,
+// preservando o posicionamento interno do Leaflet (zoom/pan).
+function makePopupDraggable(popup) {
+    if (!popup || !popup._container) return;
+    const container = popup._container;
+    if (container.dataset.draggableInit === '1') return;
+    container.dataset.draggableInit = '1';
+
+    const wrapper = container.querySelector('.leaflet-popup-content-wrapper');
+    const tip = container.querySelector('.leaflet-popup-tip-container');
+    if (!wrapper) return;
+
+    let offX = 0, offY = 0;
+    let startX = 0, startY = 0, baseX = 0, baseY = 0;
+    let dragging = false, moved = false;
+
+    const applyOffset = () => {
+        wrapper.style.transform = `translate(${offX}px, ${offY}px)`;
+        if (tip) tip.style.transform = `translate(${offX}px, ${offY}px)`;
+    };
+
+    wrapper.style.cursor = 'grab';
+    wrapper.style.touchAction = 'none';
+    if (tip) tip.style.transition = 'none';
+
+    const getXY = (e) => {
+        if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        if (e.changedTouches && e.changedTouches.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        return { x: e.clientX, y: e.clientY };
+    };
+
+    const onDown = (e) => {
+        // Não arrastar se clicou no botão de fechar, em link, botão ou input dentro do popup
+        if (e.target.closest('.leaflet-popup-close-button')) return;
+        if (e.target.closest('a, button, input, textarea, select')) return;
+        // Apenas botão esquerdo do mouse
+        if (e.button !== undefined && e.button !== 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        const p = getXY(e);
+        startX = p.x; startY = p.y;
+        baseX = offX; baseY = offY;
+        dragging = true;
+        moved = false;
+        wrapper.style.cursor = 'grabbing';
+        document.addEventListener('mousemove', onMove, { passive: false });
+        document.addEventListener('mouseup', onUp);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onUp);
+        document.addEventListener('touchcancel', onUp);
+    };
+
+    const onMove = (e) => {
+        if (!dragging) return;
+        e.preventDefault();
+        const p = getXY(e);
+        offX = baseX + (p.x - startX);
+        offY = baseY + (p.y - startY);
+        if (Math.abs(p.x - startX) > 2 || Math.abs(p.y - startY) > 2) moved = true;
+        applyOffset();
+    };
+
+    const onUp = () => {
+        if (!dragging) return;
+        dragging = false;
+        wrapper.style.cursor = 'grab';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onUp);
+        document.removeEventListener('touchcancel', onUp);
+    };
+
+    // Impede que cliques no popup propaguem para o mapa
+    L.DomEvent.disableClickPropagation(wrapper);
+    L.DomEvent.disableScrollPropagation(wrapper);
+
+    wrapper.addEventListener('mousedown', onDown);
+    wrapper.addEventListener('touchstart', onDown, { passive: false });
+}
+
+map.on('popupopen', (e) => makePopupDraggable(e.popup));
+
 // ----- Ferramenta de medida CUSTOM -----
 // Substituiu o plugin leaflet-measure que causava arrasto inesperado do mapa.
 // Distâncias usam Haversine (Leaflet built-in); áreas usam SIRGAS 2000 / UTM 23S.
@@ -957,6 +1044,47 @@ const measureState = {
     polygon: null,
     cursorTip: null
 };
+
+// Barra flutuante com botões "Finalizar" e "Cancelar" — essencial em mobile,
+// onde duplo-clique/duplo-tap não funciona de forma confiável para encerrar.
+let measureControlsEl = null;
+function showMeasureControls() {
+    if (measureControlsEl) return;
+    measureControlsEl = document.createElement('div');
+    measureControlsEl.className = 'measure-controls';
+    measureControlsEl.innerHTML = `
+        <div class="measure-controls-hint">
+            <i class="fa-solid fa-ruler"></i>
+            <span>Toque no mapa para adicionar pontos</span>
+        </div>
+        <div class="measure-controls-btns">
+            <button class="measure-btn measure-btn-finish" id="measure-finish" type="button">
+                <i class="fa-solid fa-check"></i><span>Finalizar</span>
+            </button>
+            <button class="measure-btn measure-btn-cancel" id="measure-cancel" type="button">
+                <i class="fa-solid fa-xmark"></i><span>Cancelar</span>
+            </button>
+        </div>
+    `;
+    document.body.appendChild(measureControlsEl);
+    // Impede que cliques nos botões cheguem ao mapa (e adicionem pontos)
+    L.DomEvent.disableClickPropagation(measureControlsEl);
+    L.DomEvent.disableScrollPropagation(measureControlsEl);
+    document.getElementById('measure-finish').addEventListener('click', (e) => {
+        e.stopPropagation(); e.preventDefault();
+        finishMeasure();
+    });
+    document.getElementById('measure-cancel').addEventListener('click', (e) => {
+        e.stopPropagation(); e.preventDefault();
+        cancelMeasure();
+    });
+}
+function hideMeasureControls() {
+    if (measureControlsEl) {
+        measureControlsEl.remove();
+        measureControlsEl = null;
+    }
+}
 
 function formatDistance(m) {
     return m >= 1000
@@ -1018,9 +1146,10 @@ function startMeasure() {
     map.on('click', onMeasureClick);
     map.on('dblclick', onMeasureDblClick);
     map.on('mousemove', onMeasureMouseMove);
+    showMeasureControls();
     toast({
         title: 'Modo medição ativo',
-        sub: 'Clique para adicionar pontos · Duplo-clique para finalizar · ESC cancela',
+        sub: 'Toque/clique para pontos · Botão "Finalizar" encerra · ESC cancela',
         icon: 'fa-ruler', duration: 4500
     });
 }
@@ -1072,6 +1201,7 @@ function cleanupMeasure() {
     setTimeout(() => map.doubleClickZoom.enable(), 100);
     map.getContainer().style.cursor = '';
     document.getElementById('tool-measure').classList.remove('active');
+    hideMeasureControls();
 }
 
 function onMeasureClick(e) {
