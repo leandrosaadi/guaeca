@@ -1353,5 +1353,4 @@ loadVectorLayers().then(() => {
         if (b.isValid()) map.fitBounds(b, { padding: [40, 40] });
     }
     updateStatus();
-    setTimeout(() => toast({ title: 'GeoPortal pronto', sub: 'Pressione "/" para buscar', type: 'success', icon: 'fa-circle-check' }), 800);
 });
