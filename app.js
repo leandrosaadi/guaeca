@@ -946,18 +946,155 @@ map.on('locationerror', e => {
     toast({ title: 'Erro de localização', sub: e.message, type: 'error', icon: 'fa-triangle-exclamation' });
 });
 
-// Measure
-const measureControl = L.control.measure({
-    position: 'topright',
-    primaryLengthUnit: 'meters',
-    secondaryLengthUnit: 'kilometers',
-    primaryAreaUnit: 'sqmeters',
-    secondaryAreaUnit: 'hectares',
-    activeColor: '#14b88a',
-    completedColor: '#0c7c5c',
-    localization: 'pt_BR'
+// ----- Ferramenta de medida CUSTOM -----
+// Substituiu o plugin leaflet-measure que causava arrasto inesperado do mapa.
+// Distâncias usam Haversine (Leaflet built-in); áreas usam SIRGAS 2000 / UTM 23S.
+const measureState = {
+    active: false,
+    points: [],
+    line: null,
+    markers: [],
+    polygon: null,
+    cursorTip: null
+};
+
+function formatDistance(m) {
+    return m >= 1000
+        ? (m / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 3 }) + ' km'
+        : m.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' m';
+}
+
+function measureDistancePts(latlngs) {
+    let total = 0;
+    for (let i = 1; i < latlngs.length; i++) total += latlngs[i - 1].distanceTo(latlngs[i]);
+    return total;
+}
+
+function measureAreaPts(latlngs) {
+    if (latlngs.length < 3) return 0;
+    // Monta um feature Polygon fechado e usa o cálculo SIRGAS 2000 / UTM 23S
+    const ring = latlngs.map(ll => [ll.lng, ll.lat]);
+    ring.push([latlngs[0].lng, latlngs[0].lat]); // fecha o anel
+    return calcAreaM2({ geometry: { type: 'Polygon', coordinates: [ring] } }) || 0;
+}
+
+function updateMeasureCursorTip(currentLatLng) {
+    if (measureState.points.length === 0) return;
+    const preview = currentLatLng ? [...measureState.points, currentLatLng] : measureState.points;
+    measureState.line.setLatLngs(preview);
+    const dist = formatDistance(measureDistancePts(preview));
+    let html = `<div><b>Distância:</b> ${dist}</div>`;
+    if (preview.length >= 3) {
+        const area = measureAreaPts(preview);
+        html += `<div style="margin-top:2px"><b>Área:</b> ${formatArea(area)}</div>`;
+        if (!measureState.polygon) {
+            measureState.polygon = L.polygon(preview, {
+                color: '#14b88a', weight: 1, fillColor: '#14b88a', fillOpacity: 0.18, dashArray: '4,3'
+            }).addTo(map);
+        } else {
+            measureState.polygon.setLatLngs(preview);
+        }
+    }
+    if (currentLatLng) {
+        if (!measureState.cursorTip) {
+            measureState.cursorTip = L.tooltip({
+                permanent: true, direction: 'right', offset: [12, 0],
+                className: 'measure-cursor-tip', interactive: false
+            }).setLatLng(currentLatLng).setContent(html).addTo(map);
+        } else {
+            measureState.cursorTip.setLatLng(currentLatLng).setContent(html);
+        }
+    }
+}
+
+function startMeasure() {
+    measureState.active = true;
+    measureState.points = [];
+    measureState.markers = [];
+    measureState.line = L.polyline([], { color: '#14b88a', weight: 3, opacity: 0.9 }).addTo(map);
+    map.getContainer().style.cursor = 'crosshair';
+    document.getElementById('tool-measure').classList.add('active');
+    map.doubleClickZoom.disable();
+    map.on('click', onMeasureClick);
+    map.on('dblclick', onMeasureDblClick);
+    map.on('mousemove', onMeasureMouseMove);
+    toast({
+        title: 'Modo medição ativo',
+        sub: 'Clique para adicionar pontos · Duplo-clique para finalizar · ESC cancela',
+        icon: 'fa-ruler', duration: 4500
+    });
+}
+
+function finishMeasure() {
+    const pts = measureState.points;
+    if (pts.length < 2) { cancelMeasure(); return; }
+    const dist = formatDistance(measureDistancePts(pts));
+    const isPoly = pts.length >= 3;
+    const area = isPoly ? measureAreaPts(pts) : 0;
+    L.popup({ closeButton: true, className: 'styled-popup', maxWidth: 320 })
+        .setLatLng(pts[pts.length - 1])
+        .setContent(`
+            <div class="popup-header">
+                <div class="popup-icon" style="background:#14b88a"><i class="fa-solid fa-ruler"></i></div>
+                <div>
+                    <div class="popup-title">Medida concluída</div>
+                    <div class="popup-subtitle">${pts.length} pontos</div>
+                </div>
+            </div>
+            <div class="popup-body">
+                <div class="popup-row"><div class="popup-key">Distância</div><div class="popup-val">${dist}</div></div>
+                ${isPoly ? `<div class="popup-row"><div class="popup-key">Área <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:10px">(${AREA_METHOD})</span></div><div class="popup-val">${formatArea(area)}</div></div>` : ''}
+            </div>
+        `).openOn(map);
+    cleanupMeasure();
+}
+
+function cancelMeasure() {
+    if (measureState.line) map.removeLayer(measureState.line);
+    if (measureState.polygon) map.removeLayer(measureState.polygon);
+    measureState.markers.forEach(m => map.removeLayer(m));
+    cleanupMeasure();
+}
+
+function cleanupMeasure() {
+    measureState.active = false;
+    measureState.points = [];
+    measureState.line = null;
+    measureState.polygon = null;
+    measureState.markers = [];
+    if (measureState.cursorTip) {
+        map.removeLayer(measureState.cursorTip);
+        measureState.cursorTip = null;
+    }
+    map.off('click', onMeasureClick);
+    map.off('dblclick', onMeasureDblClick);
+    map.off('mousemove', onMeasureMouseMove);
+    setTimeout(() => map.doubleClickZoom.enable(), 100);
+    map.getContainer().style.cursor = '';
+    document.getElementById('tool-measure').classList.remove('active');
+}
+
+function onMeasureClick(e) {
+    measureState.points.push(e.latlng);
+    const m = L.circleMarker(e.latlng, {
+        radius: 5, color: '#14b88a', fillColor: '#fff', fillOpacity: 1, weight: 2
+    }).addTo(map);
+    measureState.markers.push(m);
+    updateMeasureCursorTip(e.latlng);
+}
+
+function onMeasureDblClick(e) {
+    L.DomEvent.preventDefault(e);
+    finishMeasure();
+}
+
+function onMeasureMouseMove(e) {
+    updateMeasureCursorTip(e.latlng);
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && measureState.active) cancelMeasure();
 });
-measureControl.addTo(map);
 
 // Minimap
 const miniLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
@@ -969,10 +1106,9 @@ new L.Control.MiniMap(miniLayer, {
 }).addTo(map);
 
 // ----- Tool buttons -----
-document.getElementById('tool-measure').addEventListener('click', (e) => {
-    const el = document.querySelector('.leaflet-control-measure-toggle');
-    if (el) el.click();
-    e.currentTarget.classList.toggle('active');
+document.getElementById('tool-measure').addEventListener('click', () => {
+    if (measureState.active) cancelMeasure();
+    else startMeasure();
 });
 let coordPickActive = false;
 document.getElementById('tool-coords').addEventListener('click', (e) => {
