@@ -256,7 +256,10 @@ const BASEMAPS = {
 
 // ----- Configuração de view -----
 const HOME_VIEW = { center: [-23.809, -45.449], zoom: 15 };
-const MAP_BOUNDS = L.latLngBounds([-23.825, -45.475], [-23.795, -45.425]);
+// Bounds apertados envolvendo apenas a área útil dos dados
+// (Perímetro SPE + Drenagem) com pequena margem — evita as bordas pretas
+// dos tiles do ortofoto que ficam fora da imagem real
+const MAP_BOUNDS = L.latLngBounds([-23.820, -45.470], [-23.789, -45.428]);
 
 const map = L.map('map', {
     center: HOME_VIEW.center,
@@ -288,14 +291,48 @@ let currentBasemap = 'satellite';
 basemapLayers[currentBasemap].addTo(map);
 
 // ----- Ortofoto (tiles XYZ locais) -----
-const ortoLayer = L.tileLayer('tiles/ortofoto/{z}/{x}/{y}.jpg', {
+// TileLayer customizado: processa cada tile via canvas para tornar
+// pixels pretos (bordas/no-data dos JPEGs originais) transparentes,
+// deixando o basemap aparecer no lugar das bordas pretas.
+const TransparentEdgeTileLayer = L.TileLayer.extend({
+    createTile: function(coords, done) {
+        const tile = document.createElement('canvas');
+        const size = this.getTileSize();
+        tile.width = size.x;
+        tile.height = size.y;
+        const ctx = tile.getContext('2d');
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            try {
+                ctx.drawImage(img, 0, 0, size.x, size.y);
+                const data = ctx.getImageData(0, 0, size.x, size.y);
+                const px = data.data;
+                // Pixels com r+g+b < 30 viram transparentes
+                // (cobre pretos puros e quase-pretos sem afetar verdes escuros)
+                for (let i = 0; i < px.length; i += 4) {
+                    if (px[i] + px[i + 1] + px[i + 2] < 30) px[i + 3] = 0;
+                }
+                ctx.putImageData(data, 0, 0);
+                done(null, tile);
+            } catch (e) {
+                done(e, tile);
+            }
+        };
+        img.onerror = (e) => done(e, tile);
+        img.src = this.getTileUrl(coords);
+        return tile;
+    }
+});
+
+const ortoLayer = new TransparentEdgeTileLayer('tiles/ortofoto/{z}/{x}/{y}.jpg', {
     attribution: 'Ortofoto 2024 (1:19.000)',
     minZoom: 13,
     maxZoom: 21,
     maxNativeZoom: 19,
     opacity: 1,
     bounds: MAP_BOUNDS,
-    crossOrigin: true,
+    crossOrigin: 'anonymous',
     keepBuffer: 4,
     updateWhenIdle: false,
     updateWhenZooming: true
