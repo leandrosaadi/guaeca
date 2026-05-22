@@ -320,20 +320,67 @@ async function loadVectorLayers() {
     updateStatus();
 }
 
-// ----- Cálculo de área geodésica (WGS-84 esférica) -----
-function calcAreaM2(feature) {
-    const R = 6371000; // raio médio da Terra em metros
-    function ringArea(coords) {
-        const n = coords.length - 1; // anel fechado: último = primeiro
-        if (n < 3) return 0;
-        let area = 0;
-        for (let i = 0; i < n; i++) {
-            const [lon1, lat1] = coords[i].map(v => v * Math.PI / 180);
-            const [lon2, lat2] = coords[(i + 1) % n].map(v => v * Math.PI / 180);
-            area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
-        }
-        return Math.abs(area) * R * R / 2;
+// ----- Cálculo de área PROJETADA em SIRGAS 2000 / UTM 23S (EPSG:31983) -----
+// Mesmo método que o QGIS usa quando o projeto está em CRS projetado.
+// Padrão cadastral brasileiro: área planar após projeção UTM no datum SIRGAS 2000.
+// Elipsoide GRS80, Zona 23S (CM = -45°), fator de escala k₀ = 0.9996.
+if (typeof proj4 !== 'undefined') {
+    proj4.defs('EPSG:31983',
+        '+proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+}
+const UTM23S = (typeof proj4 !== 'undefined') ? proj4('EPSG:4326', 'EPSG:31983') : null;
+
+// Fallback: GeographicLib (Karney) com elipsoide GRS80 — área geodésica verdadeira
+const GRS80 = (typeof geodesic !== 'undefined' && geodesic.Geodesic)
+    ? new geodesic.Geodesic.Geodesic(6378137.0, 1 / 298.257222101)
+    : null;
+
+// Método identificador (mostrado no popup)
+const AREA_METHOD = UTM23S ? 'SIRGAS 2000 / UTM 23S'
+                  : GRS80 ? 'GRS80 geodésico'
+                  : 'esférica';
+
+function ringAreaUTM(coords) {
+    // Projeta lon/lat → UTM 23S (metros) e aplica shoelace planar
+    const n = coords.length - 1; // último = primeiro (anel fechado)
+    if (n < 3) return 0;
+    const pts = [];
+    for (let i = 0; i < n; i++) pts.push(UTM23S.forward([coords[i][0], coords[i][1]]));
+    let area = 0;
+    for (let i = 0; i < n; i++) {
+        const [x1, y1] = pts[i];
+        const [x2, y2] = pts[(i + 1) % n];
+        area += x1 * y2 - x2 * y1;
     }
+    return Math.abs(area) / 2;
+}
+
+function ringAreaEllipsoidal(coords) {
+    const poly = new geodesic.PolygonArea.PolygonArea(GRS80, false);
+    for (let i = 0; i < coords.length - 1; i++) {
+        poly.AddPoint(coords[i][1], coords[i][0]); // (lat, lon)
+    }
+    return Math.abs(poly.Compute(false, true).area);
+}
+
+function ringAreaSpherical(coords) {
+    const R = 6371000;
+    const n = coords.length - 1;
+    if (n < 3) return 0;
+    let area = 0;
+    for (let i = 0; i < n; i++) {
+        const [lon1, lat1] = coords[i].map(v => v * Math.PI / 180);
+        const [lon2, lat2] = coords[(i + 1) % n].map(v => v * Math.PI / 180);
+        area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+    }
+    return Math.abs(area) * R * R / 2;
+}
+
+const ringArea = UTM23S ? ringAreaUTM
+                : GRS80 ? ringAreaEllipsoidal
+                : ringAreaSpherical;
+
+function calcAreaM2(feature) {
     const geom = feature.geometry;
     if (!geom) return null;
     let total = 0;
@@ -377,11 +424,11 @@ function bindFeaturePopup(feature, layer, cfg) {
         </div>`;
 
     let body = '';
-    // Área calculada dinamicamente para polígonos
+    // Área calculada dinamicamente para polígonos (SIRGAS 2000 / UTM 23S)
     if (isPolygon) {
         const areaM2 = calcAreaM2(feature);
         if (areaM2 !== null) {
-            body += `<div class="popup-row"><div class="popup-key">Área</div><div class="popup-val">${formatArea(areaM2)}</div></div>`;
+            body += `<div class="popup-row"><div class="popup-key">Área <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:10px">(${AREA_METHOD})</span></div><div class="popup-val">${formatArea(areaM2)}</div></div>`;
         }
     }
     // Atributos do GeoJSON
