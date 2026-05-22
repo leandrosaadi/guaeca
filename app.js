@@ -959,6 +959,7 @@ function makePopupDraggable(popup) {
 
     const wrapper = container.querySelector('.leaflet-popup-content-wrapper');
     const tip = container.querySelector('.leaflet-popup-tip-container');
+    const closeBtn = container.querySelector('.leaflet-popup-close-button');
     if (!wrapper) return;
 
     let offX = 0, offY = 0;
@@ -966,8 +967,10 @@ function makePopupDraggable(popup) {
     let dragging = false, moved = false;
 
     const applyOffset = () => {
-        wrapper.style.transform = `translate(${offX}px, ${offY}px)`;
-        if (tip) tip.style.transform = `translate(${offX}px, ${offY}px)`;
+        const t = `translate(${offX}px, ${offY}px)`;
+        wrapper.style.transform = t;
+        if (tip) tip.style.transform = t;
+        if (closeBtn) closeBtn.style.transform = t;
     };
 
     wrapper.style.cursor = 'grab';
