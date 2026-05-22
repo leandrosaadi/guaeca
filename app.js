@@ -21,12 +21,10 @@ const VECTOR_LAYERS = [
         name: 'Parque Municipal',
         sub: 'PM — Área verde protegida',
         popupTitle: 'Parque Municipal',
-        code: 'PM',
-        area: '455.653,01 m²',
         icon: 'fa-tree',
         file: 'data/parque_municipal.geojson',
         style: { color: '#15803d', weight: 2, opacity: 1, fillColor: '#22c55e', fillOpacity: 0.45 },
-        visible: true,
+        visible: false,
         type: 'polygon'
     },
     {
@@ -34,12 +32,10 @@ const VECTOR_LAYERS = [
         name: 'ZAR',
         sub: 'Zona de Alta Restrição',
         popupTitle: 'Zona de Alta Restrição',
-        code: 'ZAR',
-        area: '744.867,78 m²',
         icon: 'fa-square',
         file: 'data/zar.geojson',
         style: { color: '#ca8a04', weight: 2, opacity: 1, fillColor: '#eab308', fillOpacity: 0.32 },
-        visible: true,
+        visible: false,
         type: 'polygon'
     },
     {
@@ -47,12 +43,10 @@ const VECTOR_LAYERS = [
         name: 'ZC1',
         sub: 'Zona Comercial 1',
         popupTitle: 'Zona Comercial 1',
-        code: 'ZC1',
-        area: '94.333,89 m²',
         icon: 'fa-square',
         file: 'data/zc1.geojson',
         style: { color: '#9333ea', weight: 2, opacity: 1, fillColor: '#a855f7', fillOpacity: 0.32 },
-        visible: true,
+        visible: false,
         type: 'polygon'
     },
     {
@@ -60,12 +54,10 @@ const VECTOR_LAYERS = [
         name: 'ZP',
         sub: 'Zona de Proteção',
         popupTitle: 'Zona de Proteção',
-        code: 'ZP',
-        area: '696.009,18 m²',
         icon: 'fa-square',
         file: 'data/zp.geojson',
         style: { color: '#0284c7', weight: 2, opacity: 1, fillColor: '#0ea5e9', fillOpacity: 0.28 },
-        visible: true,
+        visible: false,
         type: 'polygon'
     },
     {
@@ -141,7 +133,7 @@ const VECTOR_LAYERS = [
         icon: 'fa-road',
         file: 'data/faixa_dominio_der.geojson',
         style: { color: '#7c2d12', weight: 2, opacity: 1, fillColor: '#ea580c', fillOpacity: 0.2 },
-        visible: false,
+        visible: true,
         type: 'polygon'
     },
     {
@@ -163,18 +155,18 @@ const VECTOR_LAYERS = [
         icon: 'fa-water',
         file: 'data/drenagem_sitio.geojson',
         style: { color: '#0369a1', weight: 1.5, opacity: 0.9 },
-        visible: false,
+        visible: true,
         type: 'line'
     },
     {
         id: 'duto_spe',
-        name: 'Duto SPE',
+        name: 'OSBAT SPE',
         sub: 'Infraestrutura de Dutos',
-        popupTitle: 'Duto SPE',
+        popupTitle: 'OSBAT SPE',
         icon: 'fa-pipe',
         file: 'data/duto_spe.geojson',
         style: { color: '#881391', weight: 2, opacity: 0.95 },
-        visible: false,
+        visible: true,
         type: 'line'
     },
     {
@@ -185,18 +177,7 @@ const VECTOR_LAYERS = [
         icon: 'fa-building',
         file: 'data/osvat_osplan_spe.geojson',
         style: { color: '#7c3aed', weight: 1.5, opacity: 1, fillColor: '#a78bfa', fillOpacity: 0.2 },
-        visible: false,
-        type: 'polygon'
-    },
-    {
-        id: 'osvat_osplan_pol_spe',
-        name: 'OSVAT e OSPLAN POL SPE',
-        sub: 'Ocupação de Solo - Polígonos',
-        popupTitle: 'OSVAT e OSPLAN POL',
-        icon: 'fa-building',
-        file: 'data/osvat_osplan_pol_spe.geojson',
-        style: { color: '#c026d3', weight: 1.5, opacity: 1, fillColor: '#e879f9', fillOpacity: 0.2 },
-        visible: false,
+        visible: true,
         type: 'polygon'
     }
 ];
@@ -339,11 +320,50 @@ async function loadVectorLayers() {
     updateStatus();
 }
 
+// ----- Cálculo de área geodésica (WGS-84 esférica) -----
+function calcAreaM2(feature) {
+    const R = 6371000; // raio médio da Terra em metros
+    function ringArea(coords) {
+        const n = coords.length - 1; // anel fechado: último = primeiro
+        if (n < 3) return 0;
+        let area = 0;
+        for (let i = 0; i < n; i++) {
+            const [lon1, lat1] = coords[i].map(v => v * Math.PI / 180);
+            const [lon2, lat2] = coords[(i + 1) % n].map(v => v * Math.PI / 180);
+            area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+        }
+        return Math.abs(area) * R * R / 2;
+    }
+    const geom = feature.geometry;
+    if (!geom) return null;
+    let total = 0;
+    if (geom.type === 'Polygon') {
+        total = ringArea(geom.coordinates[0]);
+        for (let i = 1; i < geom.coordinates.length; i++) total -= ringArea(geom.coordinates[i]);
+    } else if (geom.type === 'MultiPolygon') {
+        geom.coordinates.forEach(poly => {
+            let a = ringArea(poly[0]);
+            for (let i = 1; i < poly.length; i++) a -= ringArea(poly[i]);
+            total += a;
+        });
+    }
+    return total > 0 ? total : null;
+}
+
+function formatArea(m2) {
+    if (m2 >= 1000000)
+        return (m2 / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 3 }) + ' km²';
+    if (m2 >= 10000)
+        return m2.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + ' m²  (' +
+               (m2 / 10000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' ha)';
+    return m2.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + ' m²';
+}
+
 function bindFeaturePopup(feature, layer, cfg) {
     const props = feature.properties || {};
     const fillColor = cfg.style.fillColor || cfg.style.color;
     const title = cfg.popupTitle || cfg.name;
-    const subtitle = cfg.code || (cfg.popupTitle ? '' : cfg.sub);
+    const isPolygon = ['Polygon', 'MultiPolygon'].includes(feature.geometry?.type);
 
     let html = `
         <div class="popup-header">
@@ -352,19 +372,23 @@ function bindFeaturePopup(feature, layer, cfg) {
             </div>
             <div>
                 <div class="popup-title">${title}</div>
-                ${subtitle ? `<div class="popup-subtitle">${subtitle}</div>` : ''}
+                <div class="popup-subtitle">${cfg.sub}</div>
             </div>
         </div>`;
 
     let body = '';
-    if (cfg.area) {
-        body = `<div class="popup-row"><div class="popup-key">Área</div><div class="popup-val">${cfg.area}</div></div>`;
-    } else {
-        const entries = Object.entries(props).filter(([k, v]) => v !== null && v !== undefined && String(v).length);
-        entries.forEach(([k, v]) => {
-            body += `<div class="popup-row"><div class="popup-key">${k}</div><div class="popup-val">${v}</div></div>`;
-        });
+    // Área calculada dinamicamente para polígonos
+    if (isPolygon) {
+        const areaM2 = calcAreaM2(feature);
+        if (areaM2 !== null) {
+            body += `<div class="popup-row"><div class="popup-key">Área</div><div class="popup-val">${formatArea(areaM2)}</div></div>`;
+        }
     }
+    // Atributos do GeoJSON
+    const entries = Object.entries(props).filter(([k, v]) => v !== null && v !== undefined && String(v).trim().length);
+    entries.forEach(([k, v]) => {
+        body += `<div class="popup-row"><div class="popup-key">${k}</div><div class="popup-val">${v}</div></div>`;
+    });
     if (body) html += `<div class="popup-body">${body}</div>`;
 
     layer.bindPopup(html, { maxWidth: 320, className: 'styled-popup' });
